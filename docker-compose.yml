@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: kraken-api
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # Mount source code for hot reload in development
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./test:/app/test
+      # Mount data directory for SQLite persistence
+      - ./data:/app/data
+      # Node modules volume to prevent overwriting
+      - node_modules:/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=${PORT:-3000}
+      - DATABASE_PATH=/app/data/coverage.db
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - GITHUB_APP_PRIVATE_KEY_PATH=${GITHUB_APP_PRIVATE_KEY_PATH}
+      - GITHUB_INSTALLATION_ID=${GITHUB_INSTALLATION_ID}
+      - COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD:-80}
+      - COVERAGE_COMMAND=${COVERAGE_COMMAND:-npm run test:cov}
+      - NYC_REPORT_DIR=${NYC_REPORT_DIR:-./coverage}
+      - AI_USE_DOCKER=${AI_USE_DOCKER:-true}
+      - AI_DOCKER_IMAGE=${AI_DOCKER_IMAGE}
+      - AI_CLI_COMMAND=${AI_CLI_COMMAND}
+      - TEMP_DIR=${TEMP_DIR:-./temp}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JOB_MAX_RETRIES=${JOB_MAX_RETRIES:-3}
+      - JOB_RETRY_DELAY_MS=${JOB_RETRY_DELAY_MS:-5000}
+    networks:
+      - kraken-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Worker service for background jobs
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+      target: development
+    container_name: kraken-worker
+    volumes:
+      # Mount source code for hot reload in development
+      - ./src:/app/src
+      # Mount data directory for SQLite persistence (shared with API)
+      - ./data:/app/data
+      # Mount temp directory for git operations
+      - ./temp:/app/temp
+      # Node modules volume
+      - worker_node_modules:/app/node_modules
+      # Mount Docker socket for Docker-in-Docker if AI_USE_DOCKER is enabled
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=development
+      - DATABASE_PATH=/app/data/coverage.db
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - GITHUB_APP_PRIVATE_KEY_PATH=${GITHUB_APP_PRIVATE_KEY_PATH}
+      - GITHUB_INSTALLATION_ID=${GITHUB_INSTALLATION_ID}
+      - COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD:-80}
+      - COVERAGE_COMMAND=${COVERAGE_COMMAND:-npm run test:cov}
+      - NYC_REPORT_DIR=${NYC_REPORT_DIR:-./coverage}
+      - AI_USE_DOCKER=${AI_USE_DOCKER:-true}
+      - AI_DOCKER_IMAGE=${AI_DOCKER_IMAGE}
+      - AI_CLI_COMMAND=${AI_CLI_COMMAND}
+      - TEMP_DIR=/app/temp
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - JOB_MAX_RETRIES=${JOB_MAX_RETRIES:-3}
+      - JOB_RETRY_DELAY_MS=${JOB_RETRY_DELAY_MS:-5000}
+      - WORKER_POLL_INTERVAL_MS=${WORKER_POLL_INTERVAL_MS:-10000}
+      - WORKER_BATCH_SIZE=${WORKER_BATCH_SIZE:-5}
+    networks:
+      - kraken-network
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+networks:
+  kraken-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+  worker_node_modules:

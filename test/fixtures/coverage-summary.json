@@ -1,0 +1,20 @@
+{
+  "total": {
+    "lines": { "total": 100, "covered": 45, "skipped": 0, "pct": 45 },
+    "statements": { "total": 100, "covered": 45, "skipped": 0, "pct": 45 },
+    "functions": { "total": 20, "covered": 8, "skipped": 0, "pct": 40 },
+    "branches": { "total": 30, "covered": 12, "skipped": 0, "pct": 40 }
+  },
+  "src/utils.ts": {
+    "lines": { "total": 50, "covered": 20, "skipped": 0, "pct": 40 },
+    "functions": { "total": 10, "covered": 3, "skipped": 0, "pct": 30 },
+    "statements": { "total": 50, "covered": 20, "skipped": 0, "pct": 40 },
+    "branches": { "total": 15, "covered": 5, "skipped": 0, "pct": 33.33 }
+  },
+  "src/calculator.ts": {
+    "lines": { "total": 50, "covered": 25, "skipped": 0, "pct": 50 },
+    "functions": { "total": 10, "covered": 5, "skipped": 0, "pct": 50 },
+    "statements": { "total": 50, "covered": 25, "skipped": 0, "pct": 50 },
+    "branches": { "total": 15, "covered": 7, "skipped": 0, "pct": 46.67 }
+  }
+}
